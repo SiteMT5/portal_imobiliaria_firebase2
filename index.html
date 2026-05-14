@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal de Vendas — Imobiliária</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #E91E8C;
+    --pink-light: #fce4f0;
+    --pink-dark: #a01260;
+    --lime: #C8E000;
+    --lime-dark: #8a9c00;
+    --lime-light: #f0f7cc;
+    --black: #111111;
+    --white: #ffffff;
+    --gray: #f4f4f0;
+    --gray2: #e8e8e2;
+    --gray3: #a0a09a;
+    --text: #1a1a1a;
+    --card-radius: 16px;
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+    --urgent: #e65100;
+    --extreme: #b71c1c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-body); background: var(--gray); color: var(--text); min-height: 100vh; }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    position: fixed; inset: 0; background: var(--black);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+  .login-box {
+    background: #1a1a1a; border-radius: 24px;
+    padding: 48px 44px; width: 380px;
+    border: 1px solid rgba(255,255,255,0.08); text-align: center;
+  }
+  .login-logo { font-family: var(--font-display); font-style: italic; font-size: 28px; color: #fff; margin-bottom: 6px; }
+  .login-logo span { color: var(--lime); }
+  .login-subtitle { font-size: 12px; color: var(--gray3); letter-spacing: .6px; text-transform: uppercase; margin-bottom: 36px; }
+  .login-field { margin-bottom: 14px; text-align: left; }
+  .login-field label { display: block; font-size: 11px; color: var(--gray3); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+  .login-field input {
+    width: 100%; padding: 12px 16px;
+    border: 1.5px solid rgba(255,255,255,0.1); border-radius: 10px;
+    background: rgba(255,255,255,0.05); color: #fff; font-size: 14px;
+    font-family: var(--font-body); outline: none; transition: border-color .15s;
+  }
+  .login-field input:focus { border-color: var(--pink); }
+  .login-btn {
+    width: 100%; padding: 13px; background: var(--pink); color: #fff;
+    border: none; border-radius: 12px; font-size: 14px; font-weight: 600;
+    font-family: var(--font-body); cursor: pointer; margin-top: 8px; transition: background .18s;
+  }
+  .login-btn:hover { background: var(--pink-dark); }
+  .login-err { color: #f48fb1; font-size: 12px; margin-top: 10px; display: none; }
+  #app-wrapper { display: none; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    position: fixed; top: 0; left: 0;
+    width: 250px; height: 100vh; background: var(--black);
+    display: flex; flex-direction: column; z-index: 100;
+  }
+  .sidebar-brand { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .sidebar-brand h1 { font-family: var(--font-display); font-style: italic; font-size: 20px; color: var(--white); line-height: 1.2; }
+  .sidebar-brand h1 span { color: var(--lime); }
+  .sidebar-brand p { font-size: 11px; color: var(--gray3); margin-top: 4px; letter-spacing: .5px; text-transform: uppercase; }
+  .sidebar-nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+  .nav-section-label { font-size: 10px; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    border-radius: 10px; color: var(--gray3); font-size: 13px; font-weight: 400;
+    cursor: pointer; transition: all .18s; border: none; background: none;
+    width: 100%; text-align: left; font-family: var(--font-body);
+  }
+  .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .nav-item.active { background: var(--pink); color: #fff; font-weight: 500; }
+  .sidebar-footer { padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 11px; color: var(--gray3); }
+
+  /* ── SYNC STATUS ── */
+  .sync-status { padding: 8px 24px 12px; font-size: 11px; display: flex; align-items: center; gap: 6px; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .sync-dot.connecting { background: #f39c12; animation: pulse 1.5s infinite; }
+  .sync-dot.synced { background: var(--lime); }
+  .sync-dot.error { background: #e74c3c; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* ── MAIN ── */
+  .main { margin-left: 250px; min-height: 100vh; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--white); padding: 16px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--gray2); position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-title { font-size: 15px; font-weight: 500; color: var(--text); }
+  .topbar-right { display: flex; gap: 10px; align-items: center; }
+  .btn {
+    padding: 9px 20px; border-radius: 30px; font-size: 13px; font-weight: 500;
+    cursor: pointer; font-family: var(--font-body); transition: all .18s; border: none;
+  }
+  .btn-primary { background: var(--pink); color: #fff; }
+  .btn-primary:hover { background: var(--pink-dark); }
+  .btn-outline { background: transparent; border: 1.5px solid var(--gray2); color: var(--text); }
+  .btn-outline:hover { border-color: var(--pink); color: var(--pink); }
+  .btn-sm { padding: 6px 14px; font-size: 12px; }
+  .btn-danger { background: #fde8e8; color: #c0392b; }
+  .btn-danger:hover { background: #f5c6c6; }
+  .btn-green { background: #e8f5e9; color: #1b5e20; }
+  .btn-green:hover { background: #c8e6c9; }
+
+  /* ── PAGES ── */
+  .page { display: none; padding: 28px 32px; animation: fadeIn .2s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── STATS ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--white); border-radius: var(--card-radius);
+    padding: 20px; border: 1.5px solid var(--gray2); position: relative; overflow: hidden;
+  }
+  .stat-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+  .stat-card.c-pink::after { background: var(--pink); }
+  .stat-card.c-lime::after { background: var(--lime); }
+  .stat-card.c-black::after { background: var(--black); }
+  .stat-card.c-amber::after { background: #f39c12; }
+  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--gray3); margin-bottom: 8px; }
+  .stat-val { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1; }
+  .stat-val.small { font-size: 20px; }
+  .stat-sub { font-size: 12px; color: var(--gray3); margin-top: 6px; }
+
+  /* ── SECTION TITLE ── */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-family: var(--font-display); font-style: italic; font-size: 20px; font-weight: 700; color: var(--text); }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background: var(--white); border-radius: var(--card-radius);
+    border: 1.5px solid var(--gray2); overflow: hidden; margin-bottom: 24px;
+  }
+  .table-toolbar { padding: 14px 20px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .f-pill {
+    padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 400;
+    cursor: pointer; border: 1.5px solid var(--gray2); background: transparent;
+    color: var(--gray3); font-family: var(--font-body); transition: all .15s;
+  }
+  .f-pill.on { background: var(--pink); border-color: var(--pink); color: #fff; font-weight: 500; }
+  .f-pill:hover:not(.on) { border-color: var(--pink); color: var(--pink); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--gray); padding: 11px 16px; text-align: left;
+    font-size: 11px; font-weight: 600; color: var(--gray3);
+    text-transform: uppercase; letter-spacing: .4px;
+    border-bottom: 1px solid var(--gray2); white-space: nowrap;
+  }
+  td { padding: 13px 16px; border-bottom: 1px solid var(--gray2); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background .12s; }
+  tbody tr:hover { background: #fafaf8; }
+  .tfoot-row td { background: var(--gray); font-weight: 500; font-size: 13px; border-top: 1.5px solid var(--gray2); }
+
+  /* ── BADGES ── */
+  .badge { display: inline-block; padding: 4px 11px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .b-andamento { background: #e8f5e9; color: #1b5e20; }
+  .b-finalizacao { background: #fff3e0; color: #e65100; }
+  .b-concluida { background: var(--black); color: var(--lime) !important; }
+  .badge-urgente { background: #fff3e0; color: var(--urgent); font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 600; display: inline-block; margin-left: 4px; }
+  .badge-extremo { background: #fde8e8; color: var(--extreme); font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 600; display: inline-block; margin-left: 4px; }
+
+  /* ── CARDS GRID ── */
+  .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .info-card { background: var(--white); border-radius: var(--card-radius); border: 1.5px solid var(--gray2); overflow: hidden; }
+  .info-card-head { padding: 14px 18px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; gap: 8px; }
+  .info-card-head span { font-size: 14px; font-weight: 600; font-family: var(--font-display); font-style: italic; }
+  .info-card-body { padding: 14px 18px; }
+
+  /* ── ALERT ── */
+  .alert-item {
+    display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px;
+    border-radius: 10px; background: #fff8e1; border: 1px solid #ffe082;
+    margin-bottom: 8px; font-size: 12px; color: #5d4037;
+  }
+  .alert-item:last-child { margin-bottom: 0; }
+  .alert-item.green { background: #e8f5e9; border-color: #a5d6a7; color: #1b5e20; }
+  .alert-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── PROGRESS ── */
+  .prog-row { margin-bottom: 14px; }
+  .prog-row:last-child { margin-bottom: 0; }
+  .prog-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+  .prog-label span:last-child { font-weight: 500; color: var(--text); }
+  .prog-bar { height: 6px; background: var(--gray2); border-radius: 3px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 3px; transition: width .4s; }
+
+  /* ── MODAL OVERLAY ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 20px; padding: 0;
+    width: 600px; max-height: 92vh; overflow-y: auto;
+    animation: slideUp .2s ease;
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .modal-head {
+    padding: 22px 28px 18px; border-bottom: 1px solid var(--gray2);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; background: var(--white); z-index: 1; border-radius: 20px 20px 0 0;
+  }
+  .modal-head h2 { font-family: var(--font-display); font-style: italic; font-size: 20px; }
+  .modal-close { background: var(--gray); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--gray3); }
+  .modal-close:hover { background: var(--gray2); color: var(--text); }
+  .modal-body { padding: 22px 28px; }
+  .modal-foot { padding: 16px 28px; border-top: 1px solid var(--gray2); display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-section-label { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--gray3); font-weight: 600; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--gray2); grid-column: 1 / -1; }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; font-weight: 500; color: var(--gray3); text-transform: uppercase; letter-spacing: .4px; }
+  input, select, textarea {
+    padding: 10px 14px; border: 1.5px solid var(--gray2); border-radius: 10px;
+    font-size: 13px; font-family: var(--font-body); color: var(--text);
+    background: var(--white); outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--pink); }
+  textarea { resize: vertical; min-height: 70px; }
+  select { cursor: pointer; }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; grid-column: 1 / -1; }
+  .checkbox-row input[type="checkbox"] { width: 16px; height: 16px; padding: 0; accent-color: var(--pink); cursor: pointer; border: none; }
+  .checkbox-row label { text-transform: none; font-size: 13px; color: var(--text); font-weight: 400; letter-spacing: 0; cursor: pointer; }
+  .checkbox-row.urgente label { color: var(--urgent); font-weight: 600; }
+  .checkbox-row.extremo label { color: var(--extreme); font-weight: 600; }
+
+  /* ── DETALHE VENDA ── */
+  .detail-section { margin-bottom: 18px; }
+  .detail-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--gray3); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--gray2); font-weight: 600; }
+  .detail-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid var(--gray); }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-key { font-size: 13px; color: var(--gray3); }
+  .detail-val { font-size: 13px; font-weight: 500; color: var(--text); text-align: right; max-width: 65%; }
+  .detail-obs { background: var(--gray); border-radius: 10px; padding: 12px; font-size: 13px; color: var(--text); line-height: 1.6; margin-top: 4px; }
+  .highlight-val { font-size: 20px; font-weight: 600; color: var(--pink); }
+  .highlight-com { font-size: 16px; font-weight: 500; color: #1b5e20; }
+  .doc-link-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--gray); border-radius: 10px; margin-bottom: 6px; font-size: 13px; }
+  .doc-link-item a { color: var(--pink); text-decoration: none; font-weight: 500; }
+  .doc-link-item a:hover { text-decoration: underline; }
+
+  /* ── PAGE HERO ── */
+  .page-hero {
+    background: var(--black); border-radius: var(--card-radius);
+    padding: 28px 32px; margin-bottom: 22px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .page-hero h2 { font-family: var(--font-display); font-style: italic; font-size: 26px; color: #fff; }
+  .page-hero h2 span { color: var(--lime); }
+  .page-hero p { font-size: 13px; color: var(--gray3); margin-top: 4px; }
+  .hero-pills { display: flex; gap: 8px; }
+  .hero-pill { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); color: #fff; font-size: 12px; padding: 5px 14px; border-radius: 20px; font-family: var(--font-body); }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; padding: 40px; color: var(--gray3); font-size: 14px; }
+
+  /* ── ANOTACOES ── */
+  .nota-card {
+    background: var(--white); border-radius: var(--card-radius); border: 1.5px solid var(--gray2);
+    margin-bottom: 16px; overflow: hidden; transition: box-shadow .2s;
+  }
+  .nota-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+  .nota-card.is-urgente { border-left: 4px solid var(--urgent); }
+  .nota-card.is-extremo { border-left: 4px solid var(--extreme); }
+  .nota-head { padding: 14px 20px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .nota-head-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .nota-head-actions { display: flex; gap: 6px; }
+  .nota-body { padding: 14px 20px; }
+  .nota-assunto { font-size: 15px; font-weight: 600; font-family: var(--font-display); font-style: italic; }
+  .nota-meta { font-size: 11px; color: var(--gray3); margin-top: 2px; }
+  .nota-text { font-size: 13px; color: var(--text); line-height: 1.7; background: var(--gray); border-radius: 10px; padding: 12px; margin-top: 8px; white-space: pre-wrap; }
+  .add-nota-form { background: var(--white); border-radius: var(--card-radius); border: 1.5px solid var(--gray2); padding: 24px; margin-bottom: 24px; }
+  .add-nota-form .form-grid { gap: 12px; }
+  .nota-add-header { font-family: var(--font-display); font-style: italic; font-size: 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+
+  /* ── RELATORIO ── */
+  .rel-hero {
+    background: linear-gradient(135deg, var(--black) 0%, #1a1a2e 100%);
+    border-radius: var(--card-radius); padding: 36px 40px; margin-bottom: 28px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .rel-hero h2 { font-family: var(--font-display); font-style: italic; font-size: 30px; color: #fff; line-height: 1.1; }
+  .rel-hero h2 span { color: var(--lime); }
+  .rel-hero p { font-size: 13px; color: rgba(255,255,255,0.45); margin-top: 8px; }
+  .rel-hero-stats { display: flex; gap: 32px; }
+  .rel-hero-stat { text-align: right; }
+  .rel-hero-stat .val { font-size: 22px; font-weight: 700; color: var(--lime); font-family: var(--font-display); }
+  .rel-hero-stat .lbl { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: .4px; }
+  .rel-divider { height: 1px; background: var(--gray2); margin: 28px 0; }
+  .rel-section-title { font-family: var(--font-display); font-style: italic; font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .rel-section-title::after { content: ''; flex: 1; height: 1px; background: var(--gray2); }
+  .rel-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+  .rel-kpi {
+    background: var(--white); border-radius: var(--card-radius); border: 1.5px solid var(--gray2);
+    padding: 24px; position: relative; overflow: hidden;
+  }
+  .rel-kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .rel-kpi.k-pink::before { background: var(--pink); }
+  .rel-kpi.k-lime::before { background: var(--lime); }
+  .rel-kpi.k-black::before { background: var(--black); }
+  .rel-kpi h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--gray3); font-weight: 600; margin-bottom: 12px; }
+  .rel-kpi .val { font-size: 30px; font-weight: 700; color: var(--text); line-height: 1; }
+  .rel-kpi .val.pink { color: var(--pink); }
+  .rel-kpi .val.green { color: #1b5e20; }
+  .rel-kpi .sub { font-size: 12px; color: var(--gray3); margin-top: 8px; }
+  .rel-kpi .sub strong { color: var(--text); }
+  .rel-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 24px; }
+  .rel-panel { background: var(--white); border-radius: var(--card-radius); border: 1.5px solid var(--gray2); overflow: hidden; }
+  .rel-panel-head { padding: 18px 22px; border-bottom: 1px solid var(--gray2); }
+  .rel-panel-head h3 { font-family: var(--font-display); font-style: italic; font-size: 16px; font-weight: 700; }
+  .rel-panel-head p { font-size: 12px; color: var(--gray3); margin-top: 2px; }
+  .rel-panel-body { padding: 18px 22px; }
+  .rel-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .rel-table th { background: var(--gray); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; color: var(--gray3); text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--gray2); }
+  .rel-table td { padding: 12px 14px; border-bottom: 1px solid var(--gray); }
+  .rel-table tr:last-child td { border-bottom: none; }
+  .rel-table tbody tr:hover { background: #fafaf8; }
+  .tag { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 10px; background: var(--gray); color: var(--gray3); }
+  .cor-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 5px; }
+
+  /* ── PLANILHA ── */
+  .planilha-box { background: var(--white); border-radius: var(--card-radius); border: 1.5px solid var(--gray2); padding: 28px; max-width: 640px; }
+  .planilha-box h3 { font-family: var(--font-display); font-style: italic; font-size: 20px; margin-bottom: 8px; }
+  .planilha-box p { font-size: 13px; color: var(--gray3); margin-bottom: 20px; line-height: 1.6; }
+  .planilha-link-row { display: flex; gap: 10px; }
+  .planilha-link-row input { flex: 1; }
+  .planilha-saved { margin-top: 14px; background: var(--gray); border-radius: 10px; padding: 12px 16px; font-size: 13px; display: none; }
+  .planilha-saved a { color: var(--pink); text-decoration: none; font-weight: 500; word-break: break-all; }
+  .planilha-saved a:hover { text-decoration: underline; }
+
+  /* ── CORRETORES ── */
+  .cor-cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .cor-card {
+    background: var(--white); border-radius: var(--card-radius); border: 1.5px solid var(--gray2);
+    padding: 22px; position: relative; overflow: hidden; text-align: center;
+  }
+  .cor-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+  .cor-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; margin: 0 auto 12px;
+    font-family: var(--font-display);
+  }
+  .cor-card-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .cor-card-role { font-size: 11px; color: var(--gray3); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 14px; }
+  .cor-card-val { font-size: 22px; font-weight: 700; color: var(--text); }
+  .cor-card-sub { font-size: 12px; color: var(--gray3); margin-top: 4px; }
+  .chart-container {
+    background: var(--white); border-radius: var(--card-radius); border: 1.5px solid var(--gray2);
+    padding: 28px; margin-bottom: 24px;
+  }
+  .chart-title { font-family: var(--font-display); font-style: italic; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .chart-subtitle { font-size: 13px; color: var(--gray3); margin-bottom: 24px; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 24px; height: 220px; padding: 0 16px; }
+  .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+  .bar-wrap { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 1; }
+  .bar { width: 60%; border-radius: 8px 8px 0 0; transition: all .5s cubic-bezier(.4,0,.2,1); min-height: 4px; }
+  .bar-val { font-size: 12px; font-weight: 600; color: var(--text); text-align: center; }
+  .bar-label { font-size: 12px; color: var(--gray3); text-align: center; font-weight: 500; }
+  .cor-detail-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .cor-detail-table th { background: var(--gray); padding: 10px 16px; font-size: 11px; font-weight: 600; color: var(--gray3); text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--gray2); text-align: left; }
+  .cor-detail-table td { padding: 12px 16px; border-bottom: 1px solid var(--gray); font-size: 13px; }
+  .cor-detail-table tr:last-child td { border-bottom: none; }
+  .cor-detail-table tbody tr:hover { background: #fafaf8; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--gray2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- LOGIN SCREEN                               -->
+<!-- ══════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">portal<span>.</span></div>
+    <div class="login-subtitle">Sistema de Controle de Vendas</div>
+    <div class="login-field">
+      <label>Login</label>
+      <input type="text" id="login-user" placeholder="Digite seu login" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="login-pass" placeholder="Digite sua senha" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="login-btn">Entrar no Sistema</button>
+    <p class="login-err" id="login-err">Login ou senha incorretos.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- APP WRAPPER                                -->
+<!-- ══════════════════════════════════════════ -->
+<div id="app-wrapper">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <h1>portal<span>.</span><br>imobiliária</h1>
+    <p>Controle de Vendas</p>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section-label">Principal</div>
+    <button class="nav-item active" id="nav-dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" id="nav-vendas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Vendas
+    </button>
+    <button class="nav-item" id="nav-relatorio">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Relatório Geral
+    </button>
+    <button class="nav-item" id="nav-corretores">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Corretores
+    </button>
+    <div class="nav-section-label" style="margin-top:8px">Anotações</div>
+    <button class="nav-item" id="nav-anotacoes-vendas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Anotações de Vendas
+    </button>
+    <button class="nav-item" id="nav-anotacoes-gerais">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Anotações Gerais
+    </button>
+    <div class="nav-section-label" style="margin-top:8px">Configurações</div>
+    <button class="nav-item" id="nav-planilha">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+      Planilha de Backup
+    </button>
+  </div>
+  <!-- Indicador de sincronização Firebase -->
+  <div class="sync-status" id="sync-status">
+    <div class="sync-dot connecting" id="sync-dot"></div>
+    <span id="sync-text" style="color:var(--gray3)">Conectando...</span>
+  </div>
+  <div class="sidebar-footer">
+    Feito por <strong style="color:#fff">Theisy Souza</strong>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <span class="topbar-title" id="topbar-title">Dashboard</span>
+    <div class="topbar-right">
+      <button class="btn btn-outline btn-sm" id="btn-export-csv">Exportar CSV</button>
+      <button class="btn btn-primary btn-sm" id="btn-nova-venda">+ Nova Venda</button>
+    </div>
+  </div>
+
+  <!-- PAGE: DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-hero">
+      <div>
+        <h2>controle de <span>vendas</span></h2>
+        <p>Imobiliária · Gestão em tempo real</p>
+      </div>
+      <div class="hero-pills">
+        <span class="hero-pill" id="hero-total-vendas">0 vendas</span>
+        <span class="hero-pill">2025</span>
+      </div>
+    </div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="section-header">
+      <span class="section-title">Últimas Vendas Registradas</span>
+      <button class="btn btn-outline btn-sm" id="btn-ver-todas">Ver todas</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Cliente</th><th>Imóvel</th><th>Valor</th><th>Comissão</th><th>Corretor</th><th>Status</th></tr></thead>
+        <tbody id="dash-tbody"></tbody>
+      </table>
+    </div>
+    <div class="cards-grid">
+      <div class="info-card">
+        <div class="info-card-head"><span>Pendências a Verificar</span></div>
+        <div class="info-card-body" id="alertas-body"></div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-head"><span>Comissão por Corretor</span></div>
+        <div class="info-card-body" id="corretor-chart"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: VENDAS -->
+  <div class="page" id="page-vendas">
+    <div class="section-header" style="margin-bottom:16px">
+      <span class="section-title">Gestão de Vendas</span>
+      <button class="btn btn-primary btn-sm" id="btn-nova-venda-2">+ Nova Venda</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-toolbar" id="filtros-toolbar"></div>
+      <div style="overflow-x:auto">
+        <table style="min-width:920px">
+          <thead>
+            <tr>
+              <th style="width:90px">Data</th>
+              <th style="width:110px">Cliente</th>
+              <th>Imóvel</th>
+              <th style="width:120px">Valor</th>
+              <th style="width:120px">Comissão</th>
+              <th style="width:110px">Corretor</th>
+              <th style="width:120px">Pagamento</th>
+              <th style="width:120px">Status</th>
+              <th style="width:100px">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="vendas-tbody"></tbody>
+          <tfoot><tr class="tfoot-row" id="tfoot"></tr></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: RELATORIO -->
+  <div class="page" id="page-relatorio">
+    <div class="rel-hero">
+      <div>
+        <h2>Relatório <span>Geral</span></h2>
+        <p>Resumo financeiro consolidado — Imobiliária</p>
+      </div>
+      <div class="rel-hero-stats" id="rel-hero-stats"></div>
+    </div>
+    <div class="rel-section-title">Indicadores Financeiros</div>
+    <div class="rel-kpis" id="rel-kpis"></div>
+    <div class="rel-section-title">Análise por Categoria</div>
+    <div class="rel-cards">
+      <div class="rel-panel">
+        <div class="rel-panel-head"><h3>Forma de Pagamento</h3><p>Distribuição por modalidade</p></div>
+        <div class="rel-panel-body" id="rel-pagamento"></div>
+      </div>
+      <div class="rel-panel">
+        <div class="rel-panel-head"><h3>Status das Vendas</h3><p>Distribuição por estágio</p></div>
+        <div class="rel-panel-body" id="rel-status"></div>
+      </div>
+    </div>
+    <div class="rel-section-title">Performance dos Corretores</div>
+    <div class="rel-panel" style="margin-bottom:24px">
+      <div class="rel-panel-head"><h3>Ranking de Corretores</h3><p>Ordenado por comissão gerada</p></div>
+      <div class="rel-panel-body">
+        <table class="rel-table">
+          <thead><tr><th>Corretor</th><th>Vendas</th><th>Volume</th><th>Comissão</th><th>Média %</th></tr></thead>
+          <tbody id="rel-corretor-table"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="rel-section-title">Alertas e Pendências</div>
+    <div class="rel-panel" style="margin-bottom:24px">
+      <div class="rel-panel-head"><h3>Datas Pendentes de Verificação</h3><p>Vendas com data não registrada</p></div>
+      <div class="rel-panel-body" id="rel-datas"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: ANOTACOES DE VENDAS -->
+  <div class="page" id="page-anotacoes-vendas">
+    <div class="page-hero">
+      <div>
+        <h2>Anotações de <span>Vendas</span></h2>
+        <p>Registros e observações vinculadas às negociações</p>
+      </div>
+    </div>
+    <div class="add-nota-form">
+      <div class="nota-add-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Nova Anotação de Venda
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Venda Relacionada</label>
+          <select id="nota-venda-id"><option value="">-- Selecionar venda --</option></select>
+        </div>
+        <div class="form-group">
+          <label>Status da Anotação</label>
+          <select id="nota-status">
+            <option value="Em acompanhamento">Em acompanhamento</option>
+            <option value="Aguardando retorno">Aguardando retorno</option>
+            <option value="Pendente de documentos">Pendente de documentos</option>
+            <option value="Resolvido">Resolvido</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Assunto</label>
+          <input type="text" id="nota-assunto" placeholder="Descreva o assunto da anotação">
+        </div>
+        <div class="form-group full">
+          <label>Anotação</label>
+          <textarea id="nota-texto" rows="4" placeholder="Escreva os detalhes..."></textarea>
+        </div>
+        <div class="checkbox-row urgente">
+          <input type="checkbox" id="nota-urgente">
+          <label for="nota-urgente">Urgente</label>
+        </div>
+        <div class="checkbox-row extremo">
+          <input type="checkbox" id="nota-extremo">
+          <label for="nota-extremo">Extremamente Urgente</label>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" id="btn-salvar-nota-venda">Salvar Anotação</button>
+      </div>
+    </div>
+    <div class="section-header">
+      <span class="section-title">Anotações Registradas</span>
+    </div>
+    <div id="notas-vendas-lista"></div>
+  </div>
+
+  <!-- PAGE: ANOTACOES GERAIS -->
+  <div class="page" id="page-anotacoes-gerais">
+    <div class="page-hero">
+      <div>
+        <h2>Anotações <span>Gerais</span></h2>
+        <p>Observações diversas e informações complementares</p>
+      </div>
+    </div>
+    <div class="add-nota-form">
+      <div class="nota-add-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Nova Anotação Geral
+      </div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Assunto</label>
+          <input type="text" id="geral-assunto" placeholder="Assunto ou título da anotação">
+        </div>
+        <div class="form-group full">
+          <label>Anotação</label>
+          <textarea id="geral-texto" rows="4" placeholder="Escreva os detalhes..."></textarea>
+        </div>
+        <div class="checkbox-row urgente">
+          <input type="checkbox" id="geral-urgente">
+          <label for="geral-urgente">Urgente</label>
+        </div>
+        <div class="checkbox-row extremo">
+          <input type="checkbox" id="geral-extremo">
+          <label for="geral-extremo">Extremamente Urgente</label>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" id="btn-salvar-nota-geral">Salvar Anotação</button>
+      </div>
+    </div>
+    <div class="section-header">
+      <span class="section-title">Anotações Registradas</span>
+    </div>
+    <div id="notas-gerais-lista"></div>
+  </div>
+
+  <!-- PAGE: PLANILHA -->
+  <div class="page" id="page-planilha">
+    <div class="page-hero">
+      <div>
+        <h2>Planilha de <span>Backup</span></h2>
+        <p>Vincule uma planilha do Google como segurança adicional</p>
+      </div>
+    </div>
+    <div class="planilha-box">
+      <h3>Link da Planilha</h3>
+      <p>Salve aqui o link da sua planilha do Google Sheets. Em caso de necessidade, acesse seus dados diretamente por este link.</p>
+      <div class="planilha-link-row">
+        <input type="url" id="planilha-link-input" placeholder="https://docs.google.com/spreadsheets/...">
+        <button class="btn btn-primary" id="btn-salvar-link">Salvar</button>
+      </div>
+      <div class="planilha-saved" id="planilha-saved-box">
+        <strong style="font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--gray3)">Planilha salva:</strong><br>
+        <a id="planilha-saved-link" href="#" target="_blank" rel="noopener">--</a>
+        <button class="btn btn-outline btn-sm" style="margin-left:10px;vertical-align:middle" id="btn-abrir-planilha">Abrir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: CORRETORES -->
+  <div class="page" id="page-corretores">
+    <div class="page-hero">
+      <div>
+        <h2>Painel de <span>Corretores</span></h2>
+        <p>Comissões individuais e performance por negociação</p>
+      </div>
+    </div>
+    <div class="cor-cards-row" id="cor-cards-row"></div>
+    <div class="chart-container">
+      <div class="chart-title">Comissão por Corretor</div>
+      <div class="chart-subtitle">Total acumulado de comissões em todas as vendas</div>
+      <div class="bar-chart" id="cor-bar-chart"></div>
+    </div>
+    <div class="rel-panel" style="margin-bottom:24px">
+      <div class="rel-panel-head"><h3>Detalhamento por Venda</h3><p>Comissão de cada corretor em cada negociação</p></div>
+      <div class="rel-panel-body" style="padding:0">
+        <table class="cor-detail-table">
+          <thead><tr><th>Venda</th><th>Cliente</th><th>Valor</th><th style="color:#E91E8C">Kezia</th><th style="color:#3498db">Theisy</th><th style="color:#8e44ad">Vanessa</th><th style="color:#f39c12">Portal</th></tr></thead>
+          <tbody id="cor-detail-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /app-wrapper -->
+
+<!-- ══════════════════════════════════════════ -->
+<!-- MODAL: NOVA/EDITAR VENDA                   -->
+<!-- ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-venda">
+  <div class="modal" style="width:660px">
+    <div class="modal-head">
+      <h2 id="modal-titulo">Nova Venda</h2>
+      <button class="modal-close" id="modal-close-btn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Data da Venda</label>
+          <input type="text" id="f-data" placeholder="dd/mm/aaaa ou Verificar contrato">
+        </div>
+        <div class="form-group">
+          <label>Nome do Cliente</label>
+          <input type="text" id="f-cliente" placeholder="Nome do cliente">
+        </div>
+        <div class="form-group full">
+          <label>Imóvel Vendido</label>
+          <input type="text" id="f-imovel" placeholder="Endereço ou descrição do imóvel">
+        </div>
+        <div class="form-group">
+          <label>Valor da Venda (R$)</label>
+          <input type="number" id="f-valor" placeholder="ex: 330000">
+        </div>
+        <div class="form-group">
+          <label>Corretor Responsável</label>
+          <input type="text" id="f-corretor" placeholder="Nome do corretor">
+        </div>
+        <div class="form-group">
+          <label>Corretor Apoio / Construtora</label>
+          <input type="text" id="f-apoio" placeholder="Apoio ou construtora">
+        </div>
+        <div class="form-group">
+          <label>Status da Venda</label>
+          <select id="f-status">
+            <option value="Em andamento">Em andamento</option>
+            <option value="Em finalizacao">Em finalização</option>
+            <option value="Concluida">Concluída</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Forma de Pagamento</label>
+          <select id="f-pagamento">
+            <option value="Financiamento bancario">Financiamento bancário</option>
+            <option value="A vista">À vista</option>
+            <option value="A vista (a confirmar)">À vista (a confirmar)</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="modal-section-label">Comissões dos Corretores</div>
+        <div class="form-group">
+          <label>Kezia (R$)</label>
+          <input type="number" id="f-com-kezia" placeholder="ex: 8000" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Theisy (R$)</label>
+          <input type="number" id="f-com-theisy" placeholder="ex: 4000" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Vanessa (R$)</label>
+          <input type="number" id="f-com-vanessa" placeholder="ex: 2000" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Portal / Imobiliária (R$)</label>
+          <input type="number" id="f-com-portal" placeholder="ex: 2500" step="0.01">
+        </div>
+        <div class="modal-section-label">Documentação da Venda</div>
+        <div class="form-group full">
+          <label>Contrato de Venda (link Google Drive)</label>
+          <input type="url" id="f-doc-contrato" placeholder="https://drive.google.com/...">
+        </div>
+        <div class="form-group full">
+          <label>Outros Documentos (um link por linha)</label>
+          <textarea id="f-doc-outros" rows="3" placeholder="https://drive.google.com/doc1&#10;https://drive.google.com/doc2"></textarea>
+        </div>
+        <div class="modal-section-label">Observações</div>
+        <div class="form-group full">
+          <label>Observações Gerais</label>
+          <textarea id="f-obs" placeholder="Observações relevantes sobre a venda..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="modal-cancel-btn">Cancelar</button>
+      <button class="btn btn-primary" id="modal-salvar-btn">Salvar Venda</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DETALHE VENDA -->
+<div class="modal-overlay" id="modal-detalhe">
+  <div class="modal" style="width:640px">
+    <div class="modal-head">
+      <h2 id="det-titulo">Detalhe da Venda</h2>
+      <button class="modal-close" id="det-close-btn">✕</button>
+    </div>
+    <div class="modal-body" id="det-body"></div>
+    <div class="modal-foot" id="det-foot"></div>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRMAR EXCLUSÃO -->
+<div class="modal-overlay" id="modal-del">
+  <div class="modal" style="width:380px">
+    <div class="modal-head">
+      <h2 style="color:#c0392b">Excluir Venda</h2>
+      <button class="modal-close" id="del-close-btn">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;line-height:1.6;color:var(--gray3)">Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.</p>
+      <p style="font-size:14px;font-weight:500;margin-top:10px" id="del-nome-confirm"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="del-cancel-btn">Cancelar</button>
+      <button class="btn btn-danger" id="del-confirm-btn">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- FIREBASE + LÓGICA PRINCIPAL                -->
+<!-- Use <script type="module"> para Firebase   -->
+<!-- ══════════════════════════════════════════ -->
+<script type="module">
+
+// ── 1. IMPORTS DO FIREBASE (via CDN) ──────────────────────────────────────────
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ── 2. CONFIGURAÇÃO FIREBASE ──────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDsNGKE1mMAc8-6g-jUZG_2QAf9uioyqx0",
+  authDomain: "calend-ca9e0.firebaseapp.com",
+  projectId: "calend-ca9e0",
+  storageBucket: "calend-ca9e0.firebasestorage.app",
+  messagingSenderId: "1077010914412",
+  appId: "1:1077010914412:web:5d50af6702ad82b7458c49"
+};
+
+// ── 3. INICIALIZAÇÃO ──────────────────────────────────────────────────────────
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Referência única ao documento que armazena todos os dados
+const DOC_REF = doc(db, "imobiliaria", "dados");
+
+// Cache local (localStorage) — usado apenas como fallback offline
+const CACHE_KEY = 'imob_cache_v3';
+
+// ── 4. CONSTANTES / ESTADO ────────────────────────────────────────────────────
+const STATUS_CLASSES = {
+  'Em andamento': 'b-andamento',
+  'Em finalizacao': 'b-finalizacao',
+  'Concluida': 'b-concluida'
+};
+const STATUS_LIST = ['todos', 'Em andamento', 'Em finalizacao', 'Concluida'];
+const COR_COLORS = ['#E91E8C', '#3498db', '#8e44ad', '#f39c12', '#1abc9c', '#e67e22'];
+
+// Corretores fixos do sistema
+const CORRETORES_FIXOS = [
+  { key: 'comKezia',   nome: 'Kezia',   cor: '#E91E8C' },
+  { key: 'comTheisy',  nome: 'Theisy',  cor: '#3498db' },
+  { key: 'comVanessa', nome: 'Vanessa', cor: '#8e44ad' },
+  { key: 'comPortal',  nome: 'Portal',  cor: '#f39c12' },
+];
+
+// Estado da aplicação
+let vendas       = [];
+let notasVendas  = [];
+let notasGerais  = [];
+let planilhaLink = '';
+let nextId       = 1;
+let editId       = null;
+let deleteId     = null;
+let filtroAtual  = 'todos';
+let isLoaded     = false;
+let isSaving     = false; // evita loop de re-render ao receber snapshot próprio
+
+// Dados padrão (usados apenas na primeira vez, se Firestore estiver vazio)
+const DADOS_INICIAIS = {
+  vendas: [
+    { id:1, data:'20/06/2025', cliente:'Carlos', imovel:'Vendido em construção — último imóvel disponível na época', valor:330000, comKezia:8000, comTheisy:0, comVanessa:0, comPortal:8500, corretor:'Kezia', apoio:'Lucas Lelis', pagamento:'Financiamento bancario', status:'Em finalizacao', obs:'Vendido em construção. Não foi feito anúncio. Último imóvel disponível na época.', docContrato:'', docOutros:'' },
+    { id:2, data:'Verificar contrato', cliente:'Luciane', imovel:'Apto 103 — Prédio em Construção, Rua Nelson Pecegueiro do Amaral', valor:470000, comKezia:10000, comTheisy:5000, comVanessa:0, comPortal:8500, corretor:'Kezia', apoio:'Milton', pagamento:'A vista (a confirmar)', status:'Em andamento', obs:'Imóvel em obra.', docContrato:'', docOutros:'' },
+    { id:3, data:'Verificar contrato', cliente:'Lincoln', imovel:'Cod. 639 — casa fundos lado direito', valor:310000, comKezia:8000, comTheisy:0, comVanessa:0, comPortal:7500, corretor:'Kezia', apoio:'Lucas Lelis', pagamento:'Financiamento bancario', status:'Em andamento', obs:'Imóvel em construção. Venda passou a ser administrada pela construtora Moroco.', docContrato:'', docOutros:'' },
+    { id:4, data:'Verificar contrato', cliente:'Lilih (verificar nome no contrato)', imovel:'Cod. 551', valor:153000, comKezia:0, comTheisy:3000, comVanessa:2000, comPortal:2650, corretor:'Theisy', apoio:'Elisangela', pagamento:'A vista (a confirmar)', status:'Em finalizacao', obs:'Atenção: "Lilih" é apelido — verificar nome real no contrato.', docContrato:'', docOutros:'' },
+    { id:5, data:'Verificar contrato', cliente:'Marcelle', imovel:'Casa da Rua Amazonas', valor:500000, comKezia:12000, comTheisy:6000, comVanessa:4000, comPortal:8000, corretor:'Kezia', apoio:'Helena', pagamento:'A vista', status:'Concluida', obs:'Resolvendo pendências extras em cartório.', docContrato:'', docOutros:'' },
+  ],
+  notasVendas: [],
+  notasGerais: [],
+  planilhaLink: '',
+  nextId: 6
+};
+
+// ── 5. INDICADOR DE SINCRONIZAÇÃO ─────────────────────────────────────────────
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-text');
+  dot.className = 'sync-dot ' + state;
+  const msgs = {
+    connecting: 'Sincronizando...',
+    synced:     'Sincronizado ✓',
+    error:      'Erro de conexão'
+  };
+  txt.textContent = msg || msgs[state] || state;
+}
+
+// ── 6. SALVAR DADOS NO FIREBASE ───────────────────────────────────────────────
+async function salvarDados() {
+  const payload = { vendas, notasVendas, notasGerais, planilhaLink, nextId, _ts: Date.now() };
+  isSaving = true;
+  setSyncStatus('connecting');
+
+  try {
+    // Salva no Firestore (cria ou substitui o documento inteiro)
+    await setDoc(DOC_REF, payload);
+    // Atualiza cache local como fallback offline
+    localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+    setSyncStatus('synced');
+  } catch (err) {
+    console.error('[Firebase] Erro ao salvar:', err);
+    setSyncStatus('error');
+    // Salva no cache local mesmo com erro
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(payload)); } catch(_) {}
+  } finally {
+    // Aguarda um tick antes de liberar o flag para evitar loop com onSnapshot
+    setTimeout(() => { isSaving = false; }, 800);
+  }
+}
+
+// ── 7. CARREGAR DADOS ─────────────────────────────────────────────────────────
+async function carregarDados() {
+  setSyncStatus('connecting');
+  try {
+    const snap = await getDoc(DOC_REF);
+    if (snap.exists()) {
+      aplicarDados(snap.data());
+    } else {
+      // Primeiro acesso: carrega dados iniciais e persiste no Firebase
+      aplicarDados(DADOS_INICIAIS);
+      await salvarDados();
+    }
+  } catch (err) {
+    console.error('[Firebase] Erro ao carregar, tentando cache local:', err);
+    setSyncStatus('error');
+    const cache = localStorage.getItem(CACHE_KEY);
+    if (cache) {
+      try { aplicarDados(JSON.parse(cache)); } catch(_) { aplicarDados(DADOS_INICIAIS); }
+    } else {
+      aplicarDados(DADOS_INICIAIS);
+    }
+  }
+}
+
+// ── 8. SINCRONIZAÇÃO EM TEMPO REAL (onSnapshot) ───────────────────────────────
+// Qualquer alteração feita por outro usuário é recebida e aplicada automaticamente
+function sincronizarTempoReal() {
+  onSnapshot(
+    DOC_REF,
+    (snap) => {
+      if (isSaving) return; // ignora o snapshot acionado pela própria escrita
+      if (snap.exists()) {
+        aplicarDados(snap.data());
+        setSyncStatus('synced');
+      }
+    },
+    (err) => {
+      console.error('[Firebase] Listener error:', err);
+      setSyncStatus('error');
+    }
+  );
+}
+
+// ── 9. APLICAR DADOS AO ESTADO E RENDERIZAR ───────────────────────────────────
+function aplicarDados(data) {
+  vendas       = data.vendas       || [];
+  notasVendas  = data.notasVendas  || [];
+  notasGerais  = data.notasGerais  || [];
+  planilhaLink = data.planilhaLink || '';
+  nextId       = data.nextId       || (vendas.length ? Math.max(...vendas.map(v => v.id)) + 1 : 1);
+  isLoaded     = true;
+  // Atualiza cache local
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch(_) {}
+  renderAll();
+  setSyncStatus('synced');
+}
+
+// ── 10. RENDER ALL ────────────────────────────────────────────────────────────
+function renderAll() {
+  renderDashboard();
+  renderVendas();
+  renderNotasVendas();
+  renderNotasGerais();
+  renderRelatorio();
+  renderCorretores();
+  popularSelectVendas();
+  carregarLinkPlanilha();
+}
+
+// ── 11. HELPERS ───────────────────────────────────────────────────────────────
+function fmt(n) {
+  return 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+function badge(status) {
+  return `<span class="badge ${STATUS_CLASSES[status] || 'b-andamento'}">${status}</span>`;
+}
+function totalCom(v) {
+  return (v.comKezia || 0) + (v.comTheisy || 0) + (v.comVanessa || 0) + (v.comPortal || 0);
+}
+
+// ── 12. NAVEGAÇÃO ─────────────────────────────────────────────────────────────
+const PAGE_TITLES = {
+  'dashboard':         'Dashboard',
+  'vendas':            'Gestão de Vendas',
+  'relatorio':         'Relatório Geral',
+  'corretores':        'Painel de Corretores',
+  'anotacoes-vendas':  'Anotações de Vendas',
+  'anotacoes-gerais':  'Anotações Gerais',
+  'planilha':          'Planilha de Backup'
+};
+
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pageEl = document.getElementById('page-' + page);
+  if (pageEl) pageEl.classList.add('active');
+  const navEl = document.getElementById('nav-' + page);
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[page] || page;
+  if (page === 'anotacoes-vendas') popularSelectVendas();
+  if (page === 'corretores') renderCorretores();
+}
+
+// Wiring dos botões de navegação
+['dashboard','vendas','relatorio','corretores','anotacoes-vendas','anotacoes-gerais','planilha']
+  .forEach(p => {
+    const el = document.getElementById('nav-' + p);
+    if (el) el.addEventListener('click', () => goTo(p));
+  });
+
+document.getElementById('btn-ver-todas').addEventListener('click', () => goTo('vendas'));
+
+// ── 13. RENDER: DASHBOARD ─────────────────────────────────────────────────────
+function renderDashboard() {
+  if (!isLoaded) return;
+  const total     = vendas.reduce((a, v) => a + v.valor, 0);
+  const com       = vendas.reduce((a, v) => a + totalCom(v), 0);
+  const andamento = vendas.filter(v => v.status === 'Em andamento').length;
+  const concluidas = vendas.filter(v => v.status === 'Concluida').length;
+
+  document.getElementById('hero-total-vendas').textContent =
+    vendas.length + ' venda' + (vendas.length !== 1 ? 's' : '');
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card c-pink"><div class="stat-label">Total em Vendas</div><div class="stat-val small">${fmt(total)}</div><div class="stat-sub">${vendas.length} contrato${vendas.length !== 1 ? 's' : ''}</div></div>
+    <div class="stat-card c-lime"><div class="stat-label">Comissão Total</div><div class="stat-val small">${fmt(com)}</div><div class="stat-sub">média ${total > 0 ? (com / total * 100).toFixed(1) : 0}% sobre vendas</div></div>
+    <div class="stat-card c-amber"><div class="stat-label">Em Andamento</div><div class="stat-val">${andamento}</div><div class="stat-sub">vendas ativas</div></div>
+    <div class="stat-card c-black"><div class="stat-label">Concluídas</div><div class="stat-val">${concluidas}</div><div class="stat-sub">finalizadas com sucesso</div></div>
+  `;
+
+  const dt = document.getElementById('dash-tbody');
+  if (!vendas.length) {
+    dt.innerHTML = '<tr><td colspan="6" class="empty">Nenhuma venda registrada</td></tr>';
+  } else {
+    dt.innerHTML = vendas.slice().reverse().slice(0, 5).map(v => `
+      <tr onclick="window._app.verDetalhe(${v.id})" style="cursor:pointer">
+        <td><strong>${v.cliente}</strong></td>
+        <td style="font-size:12px;color:var(--gray3)">${v.imovel.length > 40 ? v.imovel.slice(0, 40) + '…' : v.imovel}</td>
+        <td><strong>${fmt(v.valor)}</strong></td>
+        <td style="color:#1b5e20;font-weight:500">${fmt(totalCom(v))}</td>
+        <td><span class="cor-dot" style="background:${COR_COLORS[0]}"></span>${v.corretor}</td>
+        <td>${badge(v.status)}</td>
+      </tr>`).join('');
+  }
+
+  const alertas = vendas.filter(v => v.data === 'Verificar contrato');
+  const alertaBody = document.getElementById('alertas-body');
+  alertaBody.innerHTML = alertas.length
+    ? alertas.map(v => `<div class="alert-item"><span class="alert-icon" style="font-size:13px;margin-top:1px">⚠</span><span><strong>${v.cliente}</strong> — data não registrada. Verificar contrato.</span></div>`).join('')
+    : '<p style="font-size:13px;color:var(--gray3)">Nenhuma pendência encontrada.</p>';
+
+  const maxCom = Math.max(...CORRETORES_FIXOS.map(c => vendas.reduce((a, v) => a + (v[c.key] || 0), 0)), 1);
+  document.getElementById('corretor-chart').innerHTML = CORRETORES_FIXOS.map(c => {
+    const tot = vendas.reduce((a, v) => a + (v[c.key] || 0), 0);
+    const qt  = vendas.filter(v => (v[c.key] || 0) > 0).length;
+    return `
+    <div class="prog-row">
+      <div class="prog-label">
+        <span><span class="cor-dot" style="background:${c.cor}"></span>${c.nome} <span class="tag">${qt} venda${qt !== 1 ? 's' : ''}</span></span>
+        <span style="color:#1b5e20;font-weight:500">${fmt(tot)}</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${(tot / maxCom * 100).toFixed(1)}%;background:${c.cor}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ── 14. RENDER: VENDAS ────────────────────────────────────────────────────────
+function renderVendas() {
+  if (!isLoaded) return;
+  const toolbar = document.getElementById('filtros-toolbar');
+  toolbar.innerHTML = STATUS_LIST.map(s =>
+    `<button class="f-pill${filtroAtual === s ? ' on' : ''}" data-filter="${s}">${s === 'todos' ? 'Todos' : s}</button>`
+  ).join('');
+  toolbar.querySelectorAll('.f-pill').forEach(btn => {
+    btn.addEventListener('click', () => { filtroAtual = btn.dataset.filter; renderVendas(); });
+  });
+
+  const lista = filtroAtual === 'todos' ? vendas : vendas.filter(v => v.status === filtroAtual);
+  const tb = document.getElementById('vendas-tbody');
+
+  tb.innerHTML = lista.length
+    ? lista.map(v => `
+      <tr>
+        <td style="font-size:12px;color:var(--gray3)">${v.data}</td>
+        <td><strong>${v.cliente}</strong></td>
+        <td style="font-size:12px;color:var(--gray3)">${v.imovel.length > 45 ? v.imovel.slice(0, 45) + '…' : v.imovel}</td>
+        <td><strong>${fmt(v.valor)}</strong></td>
+        <td style="color:#1b5e20;font-weight:500">${fmt(totalCom(v))}</td>
+        <td><span class="cor-dot" style="background:${COR_COLORS[0]}"></span>${v.corretor}</td>
+        <td><span class="tag">${v.pagamento}</span></td>
+        <td>${badge(v.status)}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-outline btn-sm" style="margin-right:4px;padding:5px 10px" onclick="window._app.verDetalhe(${v.id})">Ver</button>
+          <button class="btn btn-outline btn-sm" style="padding:5px 10px" onclick="window._app.abrirModal(${v.id})">Editar</button>
+          <button class="btn btn-danger btn-sm" style="padding:5px 10px;margin-left:4px" onclick="window._app.pedirDelete(${v.id})">Excluir</button>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="9" class="empty">Nenhuma venda encontrada</td></tr>';
+
+  const tv = lista.reduce((a, v) => a + v.valor, 0);
+  const tc = lista.reduce((a, v) => a + totalCom(v), 0);
+  document.getElementById('tfoot').innerHTML = `
+    <td colspan="3" style="color:var(--gray3)">Total (${lista.length} venda${lista.length !== 1 ? 's' : ''})</td>
+    <td><strong>${fmt(tv)}</strong></td>
+    <td style="color:#1b5e20;font-weight:500"><strong>${fmt(tc)}</strong></td>
+    <td colspan="4"></td>`;
+}
+
+// ── 15. RENDER: RELATÓRIO ─────────────────────────────────────────────────────
+function renderRelatorio() {
+  if (!isLoaded) return;
+  const total  = vendas.reduce((a, v) => a + v.valor, 0);
+  const com    = vendas.reduce((a, v) => a + totalCom(v), 0);
+  const pct    = total > 0 ? (com / total * 100).toFixed(1) : 0;
+  const maior  = vendas.length ? vendas.reduce((a, b) => a.valor > b.valor ? a : b) : null;
+
+  document.getElementById('rel-hero-stats').innerHTML = `
+    <div class="rel-hero-stat"><div class="val">${vendas.length}</div><div class="lbl">Vendas</div></div>
+    <div class="rel-hero-stat"><div class="val">${fmt(total).replace('R$ ', '')}</div><div class="lbl">Volume Total</div></div>
+    <div class="rel-hero-stat"><div class="val">${pct}%</div><div class="lbl">Comissão Média</div></div>
+  `;
+
+  document.getElementById('rel-kpis').innerHTML = `
+    <div class="rel-kpi k-pink">
+      <h4>Volume Total de Vendas</h4>
+      <div class="val pink">${fmt(total)}</div>
+      <div class="sub">${vendas.length} contrato${vendas.length !== 1 ? 's' : ''} registrado${vendas.length !== 1 ? 's' : ''}</div>
+    </div>
+    <div class="rel-kpi k-lime">
+      <h4>Comissão Total Gerada</h4>
+      <div class="val green">${fmt(com)}</div>
+      <div class="sub">Média de <strong>${pct}%</strong> sobre o volume</div>
+    </div>
+    <div class="rel-kpi k-black">
+      <h4>Maior Venda Registrada</h4>
+      <div class="val" style="font-size:22px">${maior ? fmt(maior.valor) : '—'}</div>
+      <div class="sub">${maior ? `<strong>${maior.cliente}</strong> — ${maior.imovel.slice(0, 30)}...` : 'Sem dados'}</div>
+    </div>
+  `;
+
+  const pagMap = {};
+  vendas.forEach(v => { pagMap[v.pagamento] = (pagMap[v.pagamento] || 0) + 1; });
+  const pagTotal = vendas.length || 1;
+  document.getElementById('rel-pagamento').innerHTML = Object.entries(pagMap).map(([pag, qt]) => `
+    <div class="prog-row">
+      <div class="prog-label"><span>${pag}</span><span>${qt} (${Math.round(qt / pagTotal * 100)}%)</span></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${qt / pagTotal * 100}%;background:var(--pink)"></div></div>
+    </div>`).join('') || '<p style="font-size:13px;color:var(--gray3)">Sem dados.</p>';
+
+  const stMap = {};
+  vendas.forEach(v => { stMap[v.status] = (stMap[v.status] || 0) + 1; });
+  const stColors = { 'Em andamento': '#1b5e20', 'Em finalizacao': '#e65100', 'Concluida': '#E91E8C' };
+  document.getElementById('rel-status').innerHTML = Object.entries(stMap).map(([st, qt]) => `
+    <div class="prog-row">
+      <div class="prog-label"><span>${badge(st)}</span><span>${qt} venda${qt !== 1 ? 's' : ''}</span></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${qt / pagTotal * 100}%;background:${stColors[st] || '#999'}"></div></div>
+    </div>`).join('') || '<p style="font-size:13px;color:var(--gray3)">Sem dados.</p>';
+
+  const corMap = {};
+  vendas.forEach(v => {
+    if (!corMap[v.corretor]) corMap[v.corretor] = { qt: 0, val: 0, com: 0 };
+    corMap[v.corretor].qt++;
+    corMap[v.corretor].val += v.valor;
+    corMap[v.corretor].com += totalCom(v);
+  });
+  document.getElementById('rel-corretor-table').innerHTML =
+    Object.entries(corMap).sort((a, b) => b[1].com - a[1].com).map(([cor, d], i) => `
+    <tr>
+      <td><span class="cor-dot" style="background:${COR_COLORS[i % COR_COLORS.length]}"></span><strong>${cor}</strong></td>
+      <td>${d.qt}</td>
+      <td>${fmt(d.val)}</td>
+      <td style="color:#1b5e20;font-weight:500">${fmt(d.com)}</td>
+      <td>${d.val > 0 ? (d.com / d.val * 100).toFixed(1) : 0}%</td>
+    </tr>`).join('') || '<tr><td colspan="5" class="empty">Sem dados</td></tr>';
+
+  const semData = vendas.filter(v => v.data === 'Verificar contrato');
+  document.getElementById('rel-datas').innerHTML = semData.length
+    ? semData.map(v => `<div class="alert-item"><span style="font-size:13px;margin-top:1px">⚠</span><span><strong>${v.cliente}</strong> — data pendente de verificação no contrato.</span></div>`).join('')
+    : '<p style="font-size:13px;color:var(--gray3)">Todas as datas estão registradas.</p>';
+}
+
+// ── 16. RENDER: CORRETORES ────────────────────────────────────────────────────
+function renderCorretores() {
+  if (!isLoaded) return;
+  const colors = { Kezia: '#E91E8C', Theisy: '#3498db', Vanessa: '#8e44ad', Portal: '#f39c12' };
+  const roles  = { Kezia: 'Corretora', Theisy: 'Corretora', Vanessa: 'Corretora', Portal: 'Imobiliária' };
+
+  document.getElementById('cor-cards-row').innerHTML = CORRETORES_FIXOS.map(c => {
+    const tot = vendas.reduce((a, v) => a + (v[c.key] || 0), 0);
+    const qt  = vendas.filter(v => (v[c.key] || 0) > 0).length;
+    const cor = colors[c.nome] || '#999';
+    return `
+    <div class="cor-card" style="--cor:${cor}">
+      <style>.cor-card:nth-of-type(n) { } .cor-card[data-name="${c.nome}"]::before { background:${cor}; }</style>
+      <div class="cor-card" style="border:none;padding:0;background:none">
+        <div class="cor-avatar" style="background:${cor}22;color:${cor}">${c.nome[0]}</div>
+        <div class="cor-card-name">${c.nome}</div>
+        <div class="cor-card-role">${roles[c.nome] || 'Corretor'}</div>
+        <div class="cor-card-val">${fmt(tot)}</div>
+        <div class="cor-card-sub">${qt} venda${qt !== 1 ? 's' : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Recria cards corretamente sem CSS duplicado
+  document.getElementById('cor-cards-row').innerHTML = CORRETORES_FIXOS.map(c => {
+    const tot = vendas.reduce((a, v) => a + (v[c.key] || 0), 0);
+    const qt  = vendas.filter(v => (v[c.key] || 0) > 0).length;
+    const cor = colors[c.nome] || '#999';
+    return `
+    <div class="cor-card" style="border-top:4px solid ${cor}">
+      <div class="cor-avatar" style="background:${cor}22;color:${cor}">${c.nome[0]}</div>
+      <div class="cor-card-name">${c.nome}</div>
+      <div class="cor-card-role">${roles[c.nome] || 'Corretor'}</div>
+      <div class="cor-card-val">${fmt(tot)}</div>
+      <div class="cor-card-sub">${qt} venda${qt !== 1 ? 's' : ''}</div>
+    </div>`;
+  }).join('');
+
+  // Gráfico de barras
+  const maxVal = Math.max(...CORRETORES_FIXOS.map(c => vendas.reduce((a, v) => a + (v[c.key] || 0), 0)), 1);
+  document.getElementById('cor-bar-chart').innerHTML = CORRETORES_FIXOS.map(c => {
+    const tot = vendas.reduce((a, v) => a + (v[c.key] || 0), 0);
+    const cor = colors[c.nome] || '#999';
+    const h   = Math.max((tot / maxVal) * 180, 4);
+    return `
+    <div class="bar-group">
+      <div class="bar-val">${tot > 0 ? fmt(tot).replace('R$ ', '') : '—'}</div>
+      <div class="bar-wrap">
+        <div class="bar" style="height:${h}px;background:${cor}"></div>
+      </div>
+      <div class="bar-label">${c.nome}</div>
+    </div>`;
+  }).join('');
+
+  // Tabela de detalhes
+  document.getElementById('cor-detail-tbody').innerHTML = vendas.length
+    ? vendas.map(v => `
+      <tr>
+        <td style="font-size:12px;color:var(--gray3)">${v.data}</td>
+        <td><strong>${v.cliente}</strong></td>
+        <td>${fmt(v.valor)}</td>
+        <td style="color:#E91E8C;font-weight:500">${v.comKezia > 0 ? fmt(v.comKezia) : '—'}</td>
+        <td style="color:#3498db;font-weight:500">${v.comTheisy > 0 ? fmt(v.comTheisy) : '—'}</td>
+        <td style="color:#8e44ad;font-weight:500">${v.comVanessa > 0 ? fmt(v.comVanessa) : '—'}</td>
+        <td style="color:#f39c12;font-weight:500">${v.comPortal > 0 ? fmt(v.comPortal) : '—'}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="7" class="empty">Nenhuma venda registrada</td></tr>';
+}
+
+// ── 17. MODAL: NOVA / EDITAR VENDA ────────────────────────────────────────────
+function abrirModal(id = null) {
+  editId = id;
+  document.getElementById('modal-titulo').textContent = id ? 'Editar Venda' : 'Nova Venda';
+  const fields = ['f-data','f-cliente','f-imovel','f-valor','f-corretor','f-apoio','f-obs','f-doc-contrato','f-doc-outros','f-com-kezia','f-com-theisy','f-com-vanessa','f-com-portal'];
+
+  if (id) {
+    const v = vendas.find(x => x.id === id);
+    document.getElementById('f-data').value         = v.data;
+    document.getElementById('f-cliente').value      = v.cliente;
+    document.getElementById('f-imovel').value       = v.imovel;
+    document.getElementById('f-valor').value        = v.valor;
+    document.getElementById('f-corretor').value     = v.corretor;
+    document.getElementById('f-apoio').value        = v.apoio || '';
+    document.getElementById('f-status').value       = v.status;
+    document.getElementById('f-pagamento').value    = v.pagamento;
+    document.getElementById('f-obs').value          = v.obs || '';
+    document.getElementById('f-doc-contrato').value = v.docContrato || '';
+    document.getElementById('f-doc-outros').value   = v.docOutros || '';
+    document.getElementById('f-com-kezia').value    = v.comKezia || '';
+    document.getElementById('f-com-theisy').value   = v.comTheisy || '';
+    document.getElementById('f-com-vanessa').value  = v.comVanessa || '';
+    document.getElementById('f-com-portal').value   = v.comPortal || '';
+  } else {
+    fields.forEach(fid => { document.getElementById(fid).value = ''; });
+    document.getElementById('f-status').value    = 'Em andamento';
+    document.getElementById('f-pagamento').value = 'Financiamento bancario';
+  }
+  document.getElementById('modal-venda').classList.add('open');
+}
+
+function fecharModal() { document.getElementById('modal-venda').classList.remove('open'); }
+
+async function salvarVenda() {
+  const data        = document.getElementById('f-data').value.trim() || 'Verificar contrato';
+  const cliente     = document.getElementById('f-cliente').value.trim();
+  const imovel      = document.getElementById('f-imovel').value.trim();
+  const valor       = parseFloat(document.getElementById('f-valor').value) || 0;
+  const corretor    = document.getElementById('f-corretor').value.trim();
+  const apoio       = document.getElementById('f-apoio').value.trim();
+  const status      = document.getElementById('f-status').value;
+  const pagamento   = document.getElementById('f-pagamento').value;
+  const obs         = document.getElementById('f-obs').value.trim();
+  const docContrato = document.getElementById('f-doc-contrato').value.trim();
+  const docOutros   = document.getElementById('f-doc-outros').value.trim();
+  const comKezia    = parseFloat(document.getElementById('f-com-kezia').value) || 0;
+  const comTheisy   = parseFloat(document.getElementById('f-com-theisy').value) || 0;
+  const comVanessa  = parseFloat(document.getElementById('f-com-vanessa').value) || 0;
+  const comPortal   = parseFloat(document.getElementById('f-com-portal').value) || 0;
+
+  if (!cliente || !imovel || !corretor) { alert('Preencha: cliente, imóvel e corretor.'); return; }
+
+  if (editId) {
+    const i = vendas.findIndex(v => v.id === editId);
+    vendas[i] = { ...vendas[i], data, cliente, imovel, valor, corretor, apoio, status, pagamento, obs, docContrato, docOutros, comKezia, comTheisy, comVanessa, comPortal };
+  } else {
+    vendas.push({ id: nextId++, data, cliente, imovel, valor, corretor, apoio, status, pagamento, obs, docContrato, docOutros, comKezia, comTheisy, comVanessa, comPortal });
+  }
+
+  await salvarDados();
+  fecharModal();
+  renderDashboard();
+  renderVendas();
+  renderRelatorio();
+  renderCorretores();
+  popularSelectVendas();
+}
+
+// ── 18. MODAL: DETALHE ────────────────────────────────────────────────────────
+function verDetalhe(id) {
+  const v = vendas.find(x => x.id === id);
+  if (!v) return;
+  document.getElementById('det-titulo').textContent = v.cliente;
+  const outrosDocs = v.docOutros ? v.docOutros.split('\n').filter(l => l.trim()) : [];
+
+  document.getElementById('det-body').innerHTML = `
+    <div class="detail-section">
+      <h4>Resumo Financeiro</h4>
+      <div style="display:flex;gap:20px;margin-bottom:8px;flex-wrap:wrap">
+        <div><div style="font-size:11px;color:var(--gray3);margin-bottom:4px">Valor da Venda</div><div class="highlight-val">${fmt(v.valor)}</div></div>
+        <div><div style="font-size:11px;color:var(--gray3);margin-bottom:4px">Comissão Total</div><div class="highlight-com">${fmt(totalCom(v))}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:8px">
+        ${CORRETORES_FIXOS.map(c => `
+          <div style="background:var(--gray);border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:10px;color:var(--gray3);margin-bottom:4px">${c.nome}</div>
+            <div style="font-size:14px;font-weight:600;color:${c.cor}">${(v[c.key] || 0) > 0 ? fmt(v[c.key]) : '—'}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="detail-section">
+      <h4>Dados da Venda</h4>
+      <div class="detail-row"><span class="detail-key">Data</span><span class="detail-val">${v.data}</span></div>
+      <div class="detail-row"><span class="detail-key">Imóvel</span><span class="detail-val">${v.imovel}</span></div>
+      <div class="detail-row"><span class="detail-key">Corretor Responsável</span><span class="detail-val">${v.corretor}</span></div>
+      ${v.apoio ? `<div class="detail-row"><span class="detail-key">Apoio / Construtora</span><span class="detail-val">${v.apoio}</span></div>` : ''}
+      <div class="detail-row"><span class="detail-key">Forma de Pagamento</span><span class="detail-val">${v.pagamento}</span></div>
+      <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val">${badge(v.status)}</span></div>
+    </div>
+    <div class="detail-section">
+      <h4>Documentação</h4>
+      ${v.docContrato ? `<div class="doc-link-item"><span style="font-size:12px;color:var(--gray3);min-width:120px">Contrato de Venda</span><a href="${v.docContrato}" target="_blank" rel="noopener">Abrir no Drive</a></div>` : '<p style="font-size:12px;color:var(--gray3)">Nenhum documento adicionado.</p>'}
+      ${outrosDocs.map((link, i) => `<div class="doc-link-item"><span style="font-size:12px;color:var(--gray3);min-width:120px">Documento ${i + 2}</span><a href="${link}" target="_blank" rel="noopener">Abrir no Drive</a></div>`).join('')}
+    </div>
+    ${v.obs ? `<div class="detail-section"><h4>Observações</h4><div class="detail-obs">${v.obs}</div></div>` : ''}
+  `;
+  document.getElementById('det-foot').innerHTML = `
+    <button class="btn btn-outline" onclick="document.getElementById('modal-detalhe').classList.remove('open')">Fechar</button>
+    <button class="btn btn-outline" onclick="document.getElementById('modal-detalhe').classList.remove('open');window._app.abrirModal(${v.id})">Editar</button>
+    <button class="btn btn-primary" onclick="document.getElementById('modal-detalhe').classList.remove('open')">OK</button>
+  `;
+  document.getElementById('modal-detalhe').classList.add('open');
+}
+
+// ── 19. MODAL: EXCLUIR ────────────────────────────────────────────────────────
+function pedirDelete(id) {
+  deleteId = id;
+  const v = vendas.find(x => x.id === id);
+  document.getElementById('del-nome-confirm').textContent = 'Venda: ' + v.cliente + ' — ' + fmt(v.valor);
+  document.getElementById('modal-del').classList.add('open');
+}
+
+async function confirmarDelete() {
+  vendas = vendas.filter(v => v.id !== deleteId);
+  await salvarDados();
+  document.getElementById('modal-del').classList.remove('open');
+  renderDashboard();
+  renderVendas();
+  renderRelatorio();
+  renderCorretores();
+}
+
+// ── 20. SELECT DE VENDAS NAS ANOTAÇÕES ───────────────────────────────────────
+function popularSelectVendas() {
+  const sel = document.getElementById('nota-venda-id');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- Selecionar venda --</option>' +
+    vendas.map(v => `<option value="${v.id}">${v.cliente} — ${v.imovel.slice(0, 40)}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+// ── 21. ANOTAÇÕES DE VENDAS ──────────────────────────────────────────────────
+async function salvarNotaVenda() {
+  const vendaId = parseInt(document.getElementById('nota-venda-id').value) || null;
+  const status  = document.getElementById('nota-status').value;
+  const assunto = document.getElementById('nota-assunto').value.trim();
+  const texto   = document.getElementById('nota-texto').value.trim();
+  const urgente = document.getElementById('nota-urgente').checked;
+  const extremo = document.getElementById('nota-extremo').checked;
+  if (!assunto) { alert('Informe o assunto da anotação.'); return; }
+
+  notasVendas.push({
+    id: Date.now(), vendaId, status, assunto, texto, urgente, extremo,
+    criado: new Date().toLocaleDateString('pt-BR')
+  });
+  await salvarDados();
+
+  document.getElementById('nota-venda-id').value  = '';
+  document.getElementById('nota-status').value    = 'Em acompanhamento';
+  document.getElementById('nota-assunto').value   = '';
+  document.getElementById('nota-texto').value     = '';
+  document.getElementById('nota-urgente').checked = false;
+  document.getElementById('nota-extremo').checked = false;
+  renderNotasVendas();
+}
+
+function renderNotasVendas() {
+  const c = document.getElementById('notas-vendas-lista');
+  if (!c) return;
+  if (!notasVendas.length) {
+    c.innerHTML = '<div class="nota-card"><div class="nota-body"><p style="color:var(--gray3);font-size:13px">Nenhuma anotação de venda registrada.</p></div></div>';
+    return;
+  }
+  const sorted = [...notasVendas].sort((a, b) => {
+    if (b.extremo && !a.extremo) return 1;
+    if (a.extremo && !b.extremo) return -1;
+    if (b.urgente && !a.urgente) return 1;
+    if (a.urgente && !b.urgente) return -1;
+    return b.id - a.id;
+  });
+  c.innerHTML = sorted.map(n => {
+    const venda = n.vendaId ? vendas.find(v => v.id === n.vendaId) : null;
+    const classeCard = n.extremo ? 'is-extremo' : n.urgente ? 'is-urgente' : '';
+    return `
+      <div class="nota-card ${classeCard}">
+        <div class="nota-head">
+          <div class="nota-head-left">
+            <span class="nota-assunto">${n.assunto}</span>
+            ${n.extremo ? '<span class="badge-extremo">EXTREMAMENTE URGENTE</span>' : n.urgente ? '<span class="badge-urgente">URGENTE</span>' : ''}
+            <span class="badge ${STATUS_CLASSES[n.status] || 'b-andamento'}" style="font-size:10px">${n.status}</span>
+          </div>
+          <div class="nota-head-actions">
+            <button class="btn btn-danger btn-sm" onclick="window._app.excluirNotaVenda(${n.id})">Excluir</button>
+          </div>
+        </div>
+        <div class="nota-body">
+          ${venda ? `<div class="nota-meta">Venda: <strong>${venda.cliente}</strong> — ${venda.imovel.slice(0, 50)}${venda.imovel.length > 50 ? '…' : ''}</div>` : ''}
+          <div class="nota-meta">Registrado em: ${n.criado}</div>
+          ${n.texto ? `<div class="nota-text">${n.texto}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function excluirNotaVenda(id) {
+  if (!confirm('Excluir esta anotação?')) return;
+  notasVendas = notasVendas.filter(n => n.id !== id);
+  await salvarDados();
+  renderNotasVendas();
+}
+
+// ── 22. ANOTAÇÕES GERAIS ──────────────────────────────────────────────────────
+async function salvarNotaGeral() {
+  const assunto = document.getElementById('geral-assunto').value.trim();
+  const texto   = document.getElementById('geral-texto').value.trim();
+  const urgente = document.getElementById('geral-urgente').checked;
+  const extremo = document.getElementById('geral-extremo').checked;
+  if (!assunto) { alert('Informe o assunto da anotação.'); return; }
+
+  notasGerais.push({
+    id: Date.now(), assunto, texto, urgente, extremo,
+    criado: new Date().toLocaleDateString('pt-BR')
+  });
+  await salvarDados();
+
+  document.getElementById('geral-assunto').value   = '';
+  document.getElementById('geral-texto').value     = '';
+  document.getElementById('geral-urgente').checked = false;
+  document.getElementById('geral-extremo').checked = false;
+  renderNotasGerais();
+}
+
+function renderNotasGerais() {
+  const c = document.getElementById('notas-gerais-lista');
+  if (!c) return;
+  if (!notasGerais.length) {
+    c.innerHTML = '<div class="nota-card"><div class="nota-body"><p style="color:var(--gray3);font-size:13px">Nenhuma anotação geral registrada.</p></div></div>';
+    return;
+  }
+  const sorted = [...notasGerais].sort((a, b) => {
+    if (b.extremo && !a.extremo) return 1;
+    if (a.extremo && !b.extremo) return -1;
+    if (b.urgente && !a.urgente) return 1;
+    if (a.urgente && !b.urgente) return -1;
+    return b.id - a.id;
+  });
+  c.innerHTML = sorted.map(n => `
+    <div class="nota-card ${n.extremo ? 'is-extremo' : n.urgente ? 'is-urgente' : ''}">
+      <div class="nota-head">
+        <div class="nota-head-left">
+          <span class="nota-assunto">${n.assunto}</span>
+          ${n.extremo ? '<span class="badge-extremo">EXTREMAMENTE URGENTE</span>' : n.urgente ? '<span class="badge-urgente">URGENTE</span>' : ''}
+        </div>
+        <div class="nota-head-actions">
+          <button class="btn btn-danger btn-sm" onclick="window._app.excluirNotaGeral(${n.id})">Excluir</button>
+        </div>
+      </div>
+      <div class="nota-body">
+        <div class="nota-meta">Registrado em: ${n.criado}</div>
+        ${n.texto ? `<div class="nota-text">${n.texto}</div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+async function excluirNotaGeral(id) {
+  if (!confirm('Excluir esta anotação?')) return;
+  notasGerais = notasGerais.filter(n => n.id !== id);
+  await salvarDados();
+  renderNotasGerais();
+}
+
+// ── 23. PLANILHA DE BACKUP ────────────────────────────────────────────────────
+async function salvarLinkPlanilha() {
+  planilhaLink = document.getElementById('planilha-link-input').value.trim();
+  await salvarDados();
+  carregarLinkPlanilha();
+}
+
+function carregarLinkPlanilha() {
+  const input = document.getElementById('planilha-link-input');
+  const box   = document.getElementById('planilha-saved-box');
+  const link  = document.getElementById('planilha-saved-link');
+  if (planilhaLink) {
+    if (input) input.value = planilhaLink;
+    box.style.display = 'block';
+    link.href        = planilhaLink;
+    link.textContent = planilhaLink;
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+// ── 24. EXPORTAR CSV ──────────────────────────────────────────────────────────
+function exportarCSV() {
+  const cols = ['Data','Cliente','Imóvel','Valor','Kezia','Theisy','Vanessa','Portal','Corretor','Apoio','Pagamento','Status','Observações'];
+  const rows = vendas.map(v => [
+    v.data, v.cliente, v.imovel, v.valor,
+    v.comKezia || 0, v.comTheisy || 0, v.comVanessa || 0, v.comPortal || 0,
+    v.corretor, v.apoio || '', v.pagamento, v.status,
+    (v.obs || '').replace(/"/g, "'")
+  ].map(c => `"${c}"`).join(','));
+  const csv = [cols.join(','), ...rows].join('\n');
+  const a   = document.createElement('a');
+  a.href     = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = 'controle_vendas_imobiliaria.csv';
+  a.click();
+}
+
+// ── 25. EXPÕE API INTERNA AO HTML (onclick inline) ────────────────────────────
+// Funções que precisam ser acessadas por onclick="..." nos templates de HTML gerado
+window._app = {
+  verDetalhe, abrirModal, pedirDelete,
+  excluirNotaVenda, excluirNotaGeral
+};
+
+// ── 26. WIRING DE EVENTOS DOS BOTÕES ESTÁTICOS ───────────────────────────────
+document.getElementById('login-btn').addEventListener('click', tentarLogin);
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') tentarLogin(); });
+document.getElementById('login-user').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('login-pass').focus(); });
+
+document.getElementById('btn-nova-venda').addEventListener('click',   () => abrirModal());
+document.getElementById('btn-nova-venda-2').addEventListener('click', () => abrirModal());
+document.getElementById('btn-export-csv').addEventListener('click',   exportarCSV);
+document.getElementById('btn-salvar-nota-venda').addEventListener('click', salvarNotaVenda);
+document.getElementById('btn-salvar-nota-geral').addEventListener('click', salvarNotaGeral);
+document.getElementById('btn-salvar-link').addEventListener('click',  salvarLinkPlanilha);
+document.getElementById('btn-abrir-planilha').addEventListener('click', () => { if (planilhaLink) window.open(planilhaLink, '_blank', 'noopener'); });
+
+document.getElementById('modal-close-btn').addEventListener('click',  fecharModal);
+document.getElementById('modal-cancel-btn').addEventListener('click', fecharModal);
+document.getElementById('modal-salvar-btn').addEventListener('click', salvarVenda);
+
+document.getElementById('det-close-btn').addEventListener('click', () => document.getElementById('modal-detalhe').classList.remove('open'));
+document.getElementById('del-close-btn').addEventListener('click', () => document.getElementById('modal-del').classList.remove('open'));
+document.getElementById('del-cancel-btn').addEventListener('click', () => document.getElementById('modal-del').classList.remove('open'));
+document.getElementById('del-confirm-btn').addEventListener('click', confirmarDelete);
+
+// Fechar modais clicando fora
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+// ── 27. LOGIN ─────────────────────────────────────────────────────────────────
+function tentarLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if (user === 'Portal' && pass === 'P@imoveis2026') {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-wrapper').style.display  = 'block';
+    iniciarApp();
+  } else {
+    document.getElementById('login-err').style.display = 'block';
+  }
+}
+
+// ── 28. INICIALIZAÇÃO DO APP ──────────────────────────────────────────────────
+async function iniciarApp() {
+  setSyncStatus('connecting');
+  // Carrega dados do Firestore (ou cache local se offline)
+  await carregarDados();
+  // Ativa listener em tempo real — qualquer usuário que salvar, todos veem
+  sincronizarTempoReal();
+}
+
+</script>
+</body>
+</html>
